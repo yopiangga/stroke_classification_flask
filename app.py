@@ -2,7 +2,8 @@ import base64
 from typing import Type
 from urllib import response
 from flask_cors import CORS, cross_origin
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_file
+import os
 
 from io import BytesIO
 
@@ -33,12 +34,40 @@ def home():
 @app.route('/ct-scan', methods=['GET'])
 @cross_origin()
 def getCTScan():
-    return "data ct scan"
+    file_array = []
+    dir_dataset = os.listdir("dataset")
+
+    for dir_type in dir_dataset:
+        dir_type_values = os.listdir("dataset/" + dir_type)
+        for dir_type_value in dir_type_values:
+            file_array.append("dataset/" + dir_type + "/" + dir_type_value)
+
+    return jsonify(file_array)
+
+@app.route('/ct-scan/download')
+@cross_origin()
+def download_file():
+    file_path = request.args.get("file-path")
+    if os.path.exists(file_path):
+        return send_file(file_path, as_attachment=True)
+    else:
+        return "File not found."
 
 @app.route('/schedule', methods=['GET'])
 @cross_origin()
 def getSchedule():
-    return "data jadwal ct scan"
+    return jsonify(
+        {
+        "patient_name": "John Doe",
+        "doctor_name": "Dr. Smith",
+        "appointment_date": "2023-09-15",
+        "appointment_time": "10:30 AM",
+        "procedure_type": "CT Scan",
+        "clinic_location": "123 Main Street, Cityville",
+        "contact_phone": "555-123-4567",
+        "additional_notes": "Please arrive 15 minutes early for paperwork."
+        }
+    )
 
 @app.route('/prediction', methods=['POST'])
 @cross_origin()
