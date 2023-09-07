@@ -4,6 +4,7 @@ from urllib import response
 from flask_cors import CORS, cross_origin
 from flask import Flask, request, jsonify, send_file
 import os
+import time
 
 from io import BytesIO
 
@@ -31,23 +32,49 @@ model = load_model('./model/stroke_classification_model.h5')
 def home():
     return "home"
 
+@app.route('/ct-scan/add', methods=['POST'])
+@cross_origin()
+def addCTScan():
+    data = request.json
+
+    image64 = data['image']
+    nik = data['nik']
+    ts = time.time()
+
+    img_width, img_height = 150, 150
+
+    target_size = (img_width, img_height)
+    img = load_image_from_base64(image64, target_size)
+    name_file = "ct-scan/" + nik + "_" + str(ts) + '.jpg'
+    img.save(name_file)
+    return jsonify(name_file)
+
+
 @app.route('/ct-scan', methods=['GET'])
 @cross_origin()
 def getCTScan():
-    file_array = []
-    dir_dataset = os.listdir("dataset")
+    nik = request.args.get("nik")
+    data_array = []
+    dir_ct_scan = os.listdir("ct-scan")
 
-    for dir_type in dir_dataset:
-        dir_type_values = os.listdir("dataset/" + dir_type)
-        for dir_type_value in dir_type_values:
-            file_array.append("dataset/" + dir_type + "/" + dir_type_value)
+    for ct_scan in dir_ct_scan:
+        file_name = ct_scan.split("_")
+        if file_name[0] == nik:
+            time = file_name[1].split('.')
+            temp = {"nik": file_name[0], "time": str(time[0])+ "." + str(time[1])}
+            data_array.append(temp)
 
-    return jsonify(file_array)
+    return jsonify(data_array)
 
-@app.route('/ct-scan/download')
+@app.route('/ct-scan/download', methods=['GET'])
 @cross_origin()
 def download_file():
-    file_path = request.args.get("file-path")
+    nik = request.args.get("nik")
+    time = request.args.get("time")
+
+    dir_ct_scan = "ct-scan/"
+    file_path = dir_ct_scan + str(nik) + "_" + str(time) + '.jpg'
+
     if os.path.exists(file_path):
         return send_file(file_path, as_attachment=True)
     else:
