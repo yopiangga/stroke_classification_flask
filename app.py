@@ -30,7 +30,7 @@ app = Flask(__name__)
 CORS(app)
 app.config['CORS_HEADERS'] = 'Content-Type'
 
-model = load_model('./model/stroke_classification_model.h5')
+model = load_model(dir + '/model/stroke_classification_model.h5')
 
 @app.route('/')
 @cross_origin()
