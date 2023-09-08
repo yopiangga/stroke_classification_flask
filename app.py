@@ -138,7 +138,7 @@ def prediction():
     elif (res_max_index == 2):
         res_class = "STROKE ISCHEMIC"
     else:
-        res_class = "E PREDICT"
+        res_class = "NOT STROKE."
 
     return jsonify(res_class)
 
