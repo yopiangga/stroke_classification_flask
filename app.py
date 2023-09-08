@@ -21,6 +21,8 @@ import cv2
 import pandas as pd
 from sklearn.preprocessing import MinMaxScaler
 
+from skimage.feature import graycomatrix, graycoprops
+
 app = Flask(__name__)
 CORS(app)
 app.config['CORS_HEADERS'] = 'Content-Type'
@@ -76,7 +78,7 @@ def download_file():
     file_path = dir_ct_scan + str(nik) + "_" + str(time) + '.jpg'
 
     if os.path.exists(file_path):
-        return send_file(file_path, as_attachment=True)
+        return send_file(file_path, as_attachment=False)
     else:
         return "File not found."
 
@@ -116,13 +118,12 @@ def prediction():
 
     morphological_image = image_to_morphological(threshold_image)
 
-    feature = calculate_glcm_features(morphological_image)
+    img = Image.fromarray(morphological_image)
+    img.save('temp/1.jpg')
 
-    feature_standart = standarization(feature)
+    feature = calculate_glcm_features("temp/1.jpg")
 
-    feature_standart_flatten = feature_standart.values.flatten()
-
-    feature_standart_array = np.array([feature_standart_flatten])
+    feature_standart_array = standarization(feature)
 
     res_predict = model.predict(feature_standart_array)
 
@@ -169,26 +170,42 @@ def image_to_morphological(img, kernel_size=3):
     opened_image = cv2.morphologyEx(image, cv2.MORPH_OPEN, kernel)
     return opened_image
 
-def calculate_glcm_features(img):
-    image = np.array(img)
+def calculate_glcm_features(image_path):
+    image = Image.open(image_path)
+    gray_image = image.convert("L")
+    gray_array = np.array(gray_image)
 
-    glcm = mh.features.haralick(image.astype(np.uint8), ignore_zeros=True)
+    # Hitung GLCM
+    distances = [1]  # Jarak antara piksel
+    angles = [0]     # Sudut
+    glcm = graycomatrix(gray_array, distances=distances, angles=angles, symmetric=True, normed=True)
 
-    contrast = np.mean(glcm[:, 2])
-    dissimilarity = np.mean(glcm[:, 4])
-    homogeneity = np.mean(glcm[:, 8])
-    correlation = np.mean(glcm[:, 9])
-    angular = np.mean(glcm[:, 1])
-    energy = np.mean(glcm[:, 0])
+    # Ekstraksi fitur dari GLCM
+    contrast = graycoprops(glcm, 'contrast')[0, 0]
+    dissimilarity = graycoprops(glcm, 'dissimilarity')[0, 0]
+    homogeneity = graycoprops(glcm, 'homogeneity')[0, 0]
+    correlation = graycoprops(glcm, 'correlation')[0, 0]
+    angular = graycoprops(glcm, 'ASM')[0, 0]
+    energy = graycoprops(glcm, 'energy')[0, 0]
 
     return [contrast, dissimilarity, homogeneity, correlation, angular, energy]
 
 def standarization(feature):
-    df_feature = pd.DataFrame(feature)
+    features = np.load("feature/1.1 features.npy")
+    features = np.append(features, [feature], axis=0)
+
+    df = pd.DataFrame(features)
+
     scaler = MinMaxScaler()
-    scaled_data = scaler.fit_transform(df_feature)
-    scaled_df = pd.DataFrame(scaled_data, columns=df_feature.columns)
-    return scaled_df
+    scaled_data = scaler.fit_transform(df)
+    scaled_df = pd.DataFrame(scaled_data, columns=df.columns)
+
+    feature_standart = scaled_df.iloc[-1]
+    feature_standart_flatten = feature_standart.values.flatten()
+
+    feature_standart_array = np.array([feature_standart_flatten])
+
+    return feature_standart_array
 
 if __name__ == '__main__':
-    app.run(debug=True, port=4000, host='0.0.0.0')
+    app.run(debug=True, port=5000, host='0.0.0.0')
