@@ -23,6 +23,9 @@ from sklearn.preprocessing import MinMaxScaler
 
 from skimage.feature import graycomatrix, graycoprops
 
+dir = "/home/farharroy120/project/"
+# dir = ""
+
 app = Flask(__name__)
 CORS(app)
 app.config['CORS_HEADERS'] = 'Content-Type'
@@ -47,7 +50,7 @@ def addCTScan():
 
     target_size = (img_width, img_height)
     img = load_image_from_base64(image64, target_size)
-    name_file = "ct-scan/" + nik + "_" + str(ts) + '.jpg'
+    name_file = dir + "ct-scan/" + nik + "_" + str(ts) + '.jpg'
     img.save(name_file)
     return jsonify(name_file)
 
@@ -57,7 +60,7 @@ def addCTScan():
 def getCTScan():
     nik = request.args.get("nik")
     data_array = []
-    dir_ct_scan = os.listdir("ct-scan")
+    dir_ct_scan = os.listdir(dir + "ct-scan")
 
     for ct_scan in dir_ct_scan:
         file_name = ct_scan.split("_")
@@ -75,7 +78,7 @@ def download_file():
     time = request.args.get("time")
 
     dir_ct_scan = "ct-scan/"
-    file_path = dir_ct_scan + str(nik) + "_" + str(time) + '.jpg'
+    file_path = dir + dir_ct_scan + str(nik) + "_" + str(time) + '.jpg'
 
     if os.path.exists(file_path):
         return send_file(file_path, as_attachment=False)
@@ -119,9 +122,9 @@ def prediction():
     morphological_image = image_to_morphological(threshold_image)
 
     img = Image.fromarray(morphological_image)
-    img.save('temp/1.jpg')
+    img.save(dir + 'temp/1.jpg')
 
-    feature = calculate_glcm_features("temp/1.jpg")
+    feature = calculate_glcm_features(dir + "temp/1.jpg")
 
     feature_standart_array = standarization(feature)
 
@@ -191,7 +194,7 @@ def calculate_glcm_features(image_path):
     return [contrast, dissimilarity, homogeneity, correlation, angular, energy]
 
 def standarization(feature):
-    features = np.load("feature/1.1 features.npy")
+    features = np.load(dir + "feature/1.1 features.npy")
     features = np.append(features, [feature], axis=0)
 
     df = pd.DataFrame(features)
