@@ -23,7 +23,7 @@ from sklearn.preprocessing import MinMaxScaler
 
 from skimage.feature import graycomatrix, graycoprops
 
-dir = "/home/farharroy120/project/"
+dir = "/home/farharoy120/project/"
 # dir = ""
 
 app = Flask(__name__)
