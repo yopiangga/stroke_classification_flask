@@ -106,12 +106,26 @@ def getSchedule():
 def prediction():
     data = request.json
 
-    image64 = data['image']
+    nik = data['nik']
+
+    dir_ct_scan = os.listdir(dir + "ct-scan")
+
+    path_file = ""
+
+    for ct_scan in dir_ct_scan:
+        file_name = ct_scan.split("_")
+        if file_name[0] == nik:
+            path_file = ct_scan
+
+    if path_file == "":
+        return jsonify("No Data")
+
+    image = Image.open(dir + "ct-scan/" + path_file)
 
     img_width, img_height = 150, 150
 
     target_size = (img_width, img_height)
-    img = load_image_from_base64(image64, target_size)
+    img = image.resize(target_size)
 
     gray_image = image_to_grayscale(img)
 
