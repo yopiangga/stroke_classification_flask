@@ -23,8 +23,8 @@ from sklearn.preprocessing import MinMaxScaler
 
 from skimage.feature import graycomatrix, graycoprops
 
-dir = "/home/farhanroy120/project/"
-# dir = ""
+# dir = "/home/farhanroy120/project/"
+dir = ""
 
 app = Flask(__name__)
 CORS(app)
@@ -128,17 +128,18 @@ def prediction():
     img = image.resize(target_size)
 
     gray_image = image_to_grayscale(img)
+    gray_image.save(dir + "temp/gray_image.jpg")
 
-    blur_image = image_to_blur(gray_image)
+    blur_image = image_to_blur(dir + "temp/gray_image.jpg")
+    cv2.imwrite(dir + "temp/blur_image.jpg", blur_image)
 
-    threshold_image = image_to_threshold(blur_image)
+    threshold_image = image_to_threshold(dir + "temp/blur_image.jpg")
+    cv2.imwrite(dir + "temp/threshold_image.jpg", threshold_image)
 
-    morphological_image = image_to_morphological(threshold_image)
+    morphological_image = image_to_morphological(dir + "temp/threshold_image.jpg")
+    cv2.imwrite(dir + "temp/morphological_image.jpg", morphological_image)
 
-    img = Image.fromarray(morphological_image)
-    img.save(dir + 'temp/1.jpg')
-
-    feature = calculate_glcm_features(dir + "temp/1.jpg")
+    feature = calculate_glcm_features(dir + "temp/morphological_image.jpg")
 
     feature_standart_array = standarization(feature)
 
@@ -171,18 +172,18 @@ def image_to_grayscale(img):
     gray_image = img.convert("L")
     return gray_image
 
-def image_to_blur(img, kernel_size=(5, 5), sigma=0):
-    image = np.array(img)
+def image_to_blur(image_path, kernel_size=(5, 5), sigma=0):
+    image = cv2.imread(image_path)  
     blurred_image = cv2.GaussianBlur(image, kernel_size, sigma)
     return blurred_image
 
-def image_to_threshold(img, block_size=11):
-    image = np.array(img)
+def image_to_threshold(image_path, block_size=11):
+    image = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
     _, thresholded_image = cv2.threshold(image, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
     return thresholded_image
 
-def image_to_morphological(img, kernel_size=3):
-    image = np.array(img)
+def image_to_morphological(image_path, kernel_size=3):
+    image = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
     kernel = np.ones((kernel_size, kernel_size), np.uint8)
     opened_image = cv2.morphologyEx(image, cv2.MORPH_OPEN, kernel)
     return opened_image
